@@ -126,12 +126,18 @@ def evaluate_model(model, preprocess_batched, pad_idx, global_rank, world_size, 
 
     total_loss = total_loss / total_batches
 
+    # 计算困惑度
+    perplexity = torch.exp(total_loss)
+
     # Gather losses across all GPUs
     gathered_losses = [torch.zeros_like(total_loss) for _ in range(world_size)]
     dist.all_gather(gathered_losses, total_loss)
     total_loss = sum([t.item() for t in gathered_losses]) / world_size
 
-    return total_loss, evaluated_on_tokens
+    # 计算最终困惑度
+    final_perplexity = math.exp(total_loss)
+
+    return total_loss, final_perplexity, evaluated_on_tokens
 
 
 def main(args):
@@ -447,6 +453,9 @@ def main(args):
         update_step += 1
         update_time = time.time() - update_time
 
+        # 计算困惑度
+        perplexity = math.exp(loss.item())
+
         # save checkpoint by save_every
         if local_step > args.gradient_accumulation and update_step % args.save_every == 0 and global_rank == 0:
             current_model_directory = f"{args.save_dir}/model_{update_step}"
@@ -488,19 +497,22 @@ def main(args):
                 json.dump(wandb_info, f, indent=4)
 
         # evaluation
-        if update_step % args.eval_every == 0:
+        # if update_step % args.eval_every == 0:
+        if update_step % 100 == 0:
             logger.info(f"Performing evaluation at step {update_step}")
-            total_loss, evaluated_on_tokens = evaluate_model(
+            total_loss, eval_perplexity, evaluated_on_tokens = evaluate_model(
                 model, preprocess_batched, pad_idx, global_rank, world_size, device, args.batch_size
             )
             if global_rank == 0:
                 wandb.log({
                     "final_eval_loss": total_loss,
+                    "final_eval_perplexity": eval_perplexity,  # 记录评估困惑度
                     "final_eval_tokens": evaluated_on_tokens,
                     },
                     step=global_step,
                 )
             logger.info(f"Eval loss at step {update_step}: {total_loss}")
+            logger.info(f"困惑度 Eval perplexity at step {update_step}: {eval_perplexity}")  # 打印评估困惑度
 
         if not layer_wise_flag:
             lr = optimizer.param_groups[0]["lr"]
@@ -513,6 +525,7 @@ def main(args):
         if global_rank == 0:
             wandb.log({
                 "loss": loss.item(),
+                "perplexity": perplexity,  # 记录训练困惑度
                 "lr": lr,
                 "update_step": update_step,
                 "tokens_seen": tokens_seen,
@@ -522,6 +535,9 @@ def main(args):
                 },
                 step=global_step,
             )
+            # 打印困惑度
+            # logger.info(f"Train loss at step {update_step}: {loss.item()}")
+            # logger.info(f"困惑度：Train perplexity at step {update_step}: {perplexity}")
         update_time = time.time()
 
     # ##############################
@@ -566,18 +582,20 @@ def main(args):
     import gc; gc.collect()
     torch.cuda.empty_cache()
 
-    total_loss, evaluated_on_tokens = evaluate_model(
+    total_loss, final_perplexity, evaluated_on_tokens = evaluate_model(
         model, preprocess_batched, pad_idx, global_rank, world_size, device, args.batch_size
     )
 
     if global_rank == 0:
         wandb.log({
             "final_eval_loss": total_loss,
+            "final_eval_perplexity": final_perplexity,  # 记录最终评估困惑度
             "final_eval_tokens": evaluated_on_tokens,
             },
             step=global_step,
         )
         logger.info(f"Final eval loss: {total_loss}")
+        logger.info(f"最终评估困惑度: {final_perplexity}")  # 打印最终评估困惑度
 
     logger.info("Script finished successfully")
     print(f"Rank {global_rank} finished successfully")
