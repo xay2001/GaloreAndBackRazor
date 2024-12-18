@@ -3,3 +3,4 @@ wandb/
 checkpoints/
 galore_torch/__pycache__
 peft_pretraining/__pycache__
+custom_functions/__pycache__
