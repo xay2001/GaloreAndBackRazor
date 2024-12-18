@@ -170,6 +170,7 @@ class LlamaMLP(nn.Module):
 
         self.gate_proj = LinearSparse(hidden_size, intermediate_size, bias=False, masker=masker, act_prune=True)
         self.down_proj = nn.Linear(intermediate_size, hidden_size, bias=False)
+        # self.down_proj = LinearSparse(hidden_size, intermediate_size, bias=False, masker=masker, act_prune=True)
         self.up_proj = LinearSparse(hidden_size, intermediate_size, bias=False, masker=masker, act_prune=True)
 
         # 将原来的 nn.Linear 层替换为 LinearSparse，并传入 masker 和 act_prune 修改第二处
@@ -187,7 +188,7 @@ class LlamaMLP(nn.Module):
         self.act_fn = SiLUSparse(masker=masker)
 
     def forward(self, x):
-        print(f"-------Input dtype: {x.dtype}")
+        # print(f"-------Input dtype: {x.dtype}")
         return self.down_proj(self.act_fn(self.gate_proj(x)) * self.up_proj(x))
 
 
@@ -210,18 +211,18 @@ class LlamaAttention(nn.Module):
                 f" and `num_heads`: {self.num_heads})."
             )
         # 原始线性投影
-        self.q_proj = nn.Linear(self.hidden_size, self.num_heads * self.head_dim, bias=False)
-        self.k_proj = nn.Linear(self.hidden_size, self.num_heads * self.head_dim, bias=False)
-        self.v_proj = nn.Linear(self.hidden_size, self.num_heads * self.head_dim, bias=False)
+        # self.q_proj = nn.Linear(self.hidden_size, self.num_heads * self.head_dim, bias=False)
+        # self.k_proj = nn.Linear(self.hidden_size, self.num_heads * self.head_dim, bias=False)
+        # self.v_proj = nn.Linear(self.hidden_size, self.num_heads * self.head_dim, bias=False)
         self.o_proj = nn.Linear(self.num_heads * self.head_dim, self.hidden_size, bias=False)
         # print("进入LlamaAttention")
         # 在实例化 LinearSparse 时传入 masker 和激活剪枝参数
         # 初始化 sm_scale 属性
         self.sm_scale = 1.0 / math.sqrt(self.head_dim)
 
-        # self.q_proj = LinearSparse(self.hidden_size, self.num_heads * self.head_dim, bias=False, masker=self.masker, act_prune=True)
-        # self.k_proj = LinearSparse(self.hidden_size, self.num_heads * self.head_dim, bias=False, masker=self.masker, act_prune=True)
-        # self.v_proj = LinearSparse(self.hidden_size, self.num_heads * self.head_dim, bias=False, masker=self.masker, act_prune=True)
+        self.q_proj = LinearSparse(self.hidden_size, self.num_heads * self.head_dim, bias=False, masker=self.masker, act_prune=True)
+        self.k_proj = LinearSparse(self.hidden_size, self.num_heads * self.head_dim, bias=False, masker=self.masker, act_prune=True)
+        self.v_proj = LinearSparse(self.hidden_size, self.num_heads * self.head_dim, bias=False, masker=self.masker, act_prune=True)
         # self.o_proj = LinearSparse(self.hidden_size, self.num_heads * self.head_dim, bias=False, masker=self.masker, act_prune=True)
 
 

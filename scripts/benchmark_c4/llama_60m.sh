@@ -45,5 +45,5 @@ CUDA_VISIBLE_DEVICES=7 torchrun --standalone --nproc_per_node 1 torchrun_main.py
     --dtype bfloat16 \
     --eval_every 1000 \
     --backrazor \
-    --prune_ratio 0.4 \
+    --prune_ratio 0.8 \
     --optimizer galore_adamw 

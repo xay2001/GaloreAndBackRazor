@@ -70,7 +70,7 @@ class LinearSparse(nn.Linear, custom_quant.Quant):
 
     def forward(self, x):
         # print("type(x) is {}".format(type(x)))
-        print(f"Input dtype: {x.dtype}")
+        # print(f"Input dtype: {x.dtype}")
         if self.masker is not None and self.training:
             mask = self.masker(x)
             # print("mask sum is {}".format((~mask).sum()))
@@ -80,39 +80,8 @@ class LinearSparse(nn.Linear, custom_quant.Quant):
                              self.iteration, self.ema_decay, self.quant_groups, self.shift)
         else:
             y = F.linear(x, self.weight, self.bias)
-        print(f"Output dtype: {y.dtype}")
+        # print(f"Output dtype: {y.dtype}")
         return y
-
-    # def forward(self, x):
-    #     # 打印输入信息
-    #     print(f"\n=== LinearSparse Input Info ===")
-    #     print(f"Input dtype: {x.dtype}")
-    #     print(f"Input shape: {x.shape}")
-    #     print(f"Input device: {x.device}")
-    #     if self.masker is not None and self.training:
-    #         mask = self.masker(x)
-    #         # 打印mask信息
-    #         print(f"\n=== Mask Info ===")
-    #         print(f"Mask dtype: {mask.dtype}")
-    #         print(f"Mask sparsity: {(~mask).sum().item()/mask.numel():.4f}")
-    #         if self.act_prune:
-    #             x = x * mask
-    #             # 打印乘以mask后的信息
-    #             print(f"\n=== After Mask Multiplication ===")
-    #             print(f"Output dtype: {x.dtype}")
-    #             print(f"Non-zero elements: {(x != 0).sum().item()}")
-    #         y = linear.apply(x, self.weight, self.bias, mask, self.quantize, self.half, self.clip_val, self.level,
-    #                          self.iteration, self.ema_decay, self.quant_groups, self.shift)
-    #     else:
-    #         y = F.linear(x, self.weight, self.bias)
-    #     # 打印输出信息
-    #     print(f"\n=== LinearSparse Output Info ===")
-    #     print(f"Output dtype: {y.dtype}")
-    #     print(f"Output shape: {y.shape}")
-    #     print(f"Output range: [{y.min().item():.4f}, {y.max().item():.4f}]")
-    #     print("="*40 + "\n")
-    #     return y
-
 
 if __name__ == "__main__":
     model = LinearSparse(100, 100)
