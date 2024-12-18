@@ -30,6 +30,8 @@ from peft_pretraining.modeling_llama import LlamaForCausalLM
 import bitsandbytes as bnb
 from galore_torch import GaLoreAdamW, GaLoreAdamW8bit, GaLoreAdafactor
 import math
+# 新增导入
+from peft_pretraining.modeling_llama_sparse import LlamaForCausalLMSparse
 # 导入Masker 类
 from custom_functions.masker import Masker
 
@@ -78,6 +80,11 @@ def parse_args(args):
     
     # disable ddp, single_gpu
     parser.add_argument("--single_gpu", default=False, action="store_true")
+
+    # 新增参数：backrazor 和 prune_ratio
+    parser.add_argument("--backrazor", default=False, action="store_true", help="Enable backrazor pruning.")
+    parser.add_argument("--prune_ratio", type=float, default=0.5, help="Prune ratio for Masker.")
+    
     
     args = parser.parse_args(args)
 
@@ -213,10 +220,22 @@ def main(args):
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=None, num_workers=args.workers)
 
     model_config = AutoConfig.from_pretrained(args.model_config)
-    if args.use_hf_model:
-        model: HF_LlamaForCausalLM = AutoModelForCausalLM.from_config(model_config)
+    # if args.use_hf_model:
+    #     model: HF_LlamaForCausalLM = AutoModelForCausalLM.from_config(model_config)
+    # else:
+    #     model = LlamaForCausalLM(model_config)
+
+    # 根据backrazor参数决定加载哪个模型
+    if args.backrazor:
+        prune_ratio = args.prune_ratio  # 剪枝率
+        print(f"剪枝率: {prune_ratio}")  # 打印剪枝率
+        masker = Masker(prune_ratio=prune_ratio)  # 初始化Masker
+        model = LlamaForCausalLMSparse(model_config, masker=masker)  # 使用稀疏模型  # 新增
     else:
-        model = LlamaForCausalLM(model_config)
+        if args.use_hf_model:
+            model: HF_LlamaForCausalLM = AutoModelForCausalLM.from_config(model_config)
+        else:
+            model = LlamaForCausalLM(model_config)
 
     if args.activation_checkpointing:
         model.gradient_checkpointing_enable()

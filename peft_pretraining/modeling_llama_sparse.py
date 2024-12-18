@@ -707,7 +707,7 @@ class LlamaModel(LlamaPreTrainedModel):
         )
 
 
-class LlamaForCausalLM(LlamaPreTrainedModel):
+class LlamaForCausalLMSparse(LlamaPreTrainedModel):
     def __init__(self, config, masker=None):
         super().__init__(config)
         self.model = LlamaModel(config, masker=masker)
