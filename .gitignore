@@ -1,3 +1,5 @@
 allenai/
 wandb/
 checkpoints/
+galore_torch/__pycache__
+peft_pretraining/__pycache__
