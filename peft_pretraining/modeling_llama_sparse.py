@@ -162,16 +162,16 @@ class LlamaMLP(nn.Module):
         masker=None, 
     ):
         super().__init__()
-        # self.gate_proj = nn.Linear(hidden_size, intermediate_size, bias=False)
-        # self.down_proj = nn.Linear(intermediate_size, hidden_size, bias=False)
-        # self.up_proj = nn.Linear(hidden_size, intermediate_size, bias=False)
+        self.gate_proj = nn.Linear(hidden_size, intermediate_size, bias=False)
+        self.down_proj = nn.Linear(intermediate_size, hidden_size, bias=False)
+        self.up_proj = nn.Linear(hidden_size, intermediate_size, bias=False)
 
         # 原始的线性层全部替换为LinearSparse
 
-        self.gate_proj = LinearSparse(hidden_size, intermediate_size, bias=False, masker=masker, act_prune=True)
-        self.down_proj = nn.Linear(intermediate_size, hidden_size, bias=False)
+        # self.gate_proj = LinearSparse(hidden_size, intermediate_size, bias=False, masker=masker, act_prune=True)
+        # self.down_proj = nn.Linear(intermediate_size, hidden_size, bias=False)
         # self.down_proj = LinearSparse(hidden_size, intermediate_size, bias=False, masker=masker, act_prune=True)
-        self.up_proj = LinearSparse(hidden_size, intermediate_size, bias=False, masker=masker, act_prune=True)
+        # self.up_proj = LinearSparse(hidden_size, intermediate_size, bias=False, masker=masker, act_prune=True)
 
         # 将原来的 nn.Linear 层替换为 LinearSparse，并传入 masker 和 act_prune 修改第二处
 

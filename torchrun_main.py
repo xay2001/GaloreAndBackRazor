@@ -517,7 +517,7 @@ def main(args):
 
         # evaluation
         # if update_step % args.eval_every == 0:
-        if update_step % 100 == 0:
+        if update_step % 500 == 0:
             logger.info(f"Performing evaluation at step {update_step}")
             total_loss, eval_perplexity, evaluated_on_tokens = evaluate_model(
                 model, preprocess_batched, pad_idx, global_rank, world_size, device, args.batch_size
